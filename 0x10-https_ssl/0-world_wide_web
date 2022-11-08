@@ -1,35 +1,15 @@
 #!/usr/bin/env bash
-# Displays informtation about subdomains.
-
-# uncomment for debugging purposes.
-#set -x
-
-# for the checker to work please remove the colors.
-
-# colors
-blue='\e[1;34m'
-brown='\e[0;33m'
-reset='\033[0m'
-
-# variables & parameters
-subdomains=( "www" "lb-01" "web-01" "web-02" )
-domain="$1"
-sub="$2"
-
-dig_cmd () {
-	# func variables
-	sub="$2"
-	INFO="$(dig "$sub.$domain" | grep -A1 'ANSWER SECTION:' | awk 'NR==2')"
-	IP=$(echo "$INFO" | awk '{print $5}')
-	RECORD=$(echo "$INFO" | awk '{print $4}')
-
-	echo -e "${brown}The subdomain ${blue}$sub${brown} is a ${blue}$RECORD${brown} record and points to ${blue}$IP${reset}"
+# This script prints the A records of the domain
+check_arg ()
+{
+    if [ "$1" -eq  1 ];
+    then
+	return_val="www.$2 lb-01.$2 web-01.$2 web-02.$2"
+    else
+	return_val="$3.$2"
+    fi
 }
 
-if [ $# -eq 1 ]; then
-	for subs in "${subdomains[@]}"; do
-		dig_cmd "$domain" "$subs"
-	done
-elif [ $# -eq 2 ]; then
-	dig_cmd "$domain" "$sub"
-fi
+check_arg "$#" "$1" "$2"
+
+dig $return_val | awk '/ANSWER SECTION/ {getline; split($1, a, "."); print "The subdomain", a[1], "is a", $4, "record and points to", $5}'
